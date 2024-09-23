@@ -2,16 +2,19 @@ package com.example.trab01bi_notasads;
 
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
+import com.example.trab01bi_notasads.models.Media;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -24,8 +27,10 @@ public class MainActivity extends AppCompatActivity {
     private EditText etNotaSegundoBi;
     private Button btnSalvar;
     private Button btnLimpar;
-    private TextView tvErro;
-    private TextView tvLista;
+    private LinearLayout linearLayoutErros;
+    private LinearLayout linearLayoutListagem;
+
+    public List<EditText> campos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,28 +46,44 @@ public class MainActivity extends AppCompatActivity {
         etNotaSegundoBi = findViewById(R.id.etNotaSegundoBi);
         btnSalvar = findViewById(R.id.btnSalvar);
         btnLimpar = findViewById(R.id.btnLimpar);
-        tvErro = findViewById(R.id.tvErro);
-        tvLista = findViewById(R.id.tvLista);
+        linearLayoutErros = findViewById(R.id.erros);
+        linearLayoutListagem = findViewById(R.id.listagem);
 
         //Lista dos campos EditText
-        List<EditText> campos = List.of(
+        campos = List.of(
                 etNome, etEmail, etIdade, etDisciplina, etNotaPrimeiroBi, etNotaSegundoBi);
+
 
         btnSalvar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                validarCampos(campos);
+                linearLayoutErros.removeAllViews();
+                boolean camposValidos = validarCampos(campos);
+
+                if (camposValidos){
+                    criarNotas();
+                }
+            }
+        });
+
+        btnLimpar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                linearLayoutListagem.removeAllViews();
+                linearLayoutErros.removeAllViews();
+                for (EditText c : campos){
+                    c.setText(null);
+                }
             }
         });
     }
 
-    private boolean validarCampos(List<EditText> campos){
+    private boolean validarCampos(@NonNull List<EditText> campos){
         boolean camposValidos = true;
 
+        ArrayList<String> erros = new ArrayList<>();
+
         String msgCamposNulos = "Campos obrigatórios não preenchidos: ";
-        String msgEmailInvalido = "";
-        String msgIdadeInvalido = "";
-        String msgNotaInvalida = "";
 
         for (EditText campo : campos) {
             if (campo.getText().toString().trim().isEmpty()) {
@@ -74,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
             }else if(campo == etEmail){
                 if (!campo.getText().toString().contains("@")){
                     camposValidos = false;
-                    msgEmailInvalido = "O e-mail inserido não é um e-mail válido.";
+                    erros.add("O e-mail inserido não é um e-mail válido.");
                     campo.setError("O e-mail inserido não é um e-mail válido.");
                 }
             }else if (campo == etIdade) {
@@ -82,12 +103,12 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!idade.matches("\\d+")) {
                     campo.setError("Apenas números são permitidos.");
-                    msgIdadeInvalido = "O campo idade aceita apenas números.";
+                    erros.add("O campo idade aceita apenas números.");
                     camposValidos = false;
 
                 } else if (Integer.parseInt(idade) < 0) {
                     campo.setError("A idade não pode ser negativa.");
-                    msgIdadeInvalido = "A idade não pode ser negativa.";
+                    erros.add("A idade não pode ser negativa.");
                     camposValidos = false;
                 }
             } else if (campo == etNotaPrimeiroBi || campo == etNotaSegundoBi) {
@@ -95,34 +116,84 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!nota.matches("^\\d+(\\.\\d+)?$")) {
                     campo.setError("O campo deve ser um número inteiro ou decimal.");
-                    msgNotaInvalida += campo.getTag() + " deve ser um número inteiro ou decimal.\n";
+                    erros.add(campo.getTag() + " deve ser um número inteiro ou decimal.");
                     camposValidos = false;
 
                 }else if (!(Double.parseDouble(nota) > -1 && Double.parseDouble(nota) < 11) ) {
                     campo.setError("A nota deve ser entre 0 e 10");
-                    msgNotaInvalida += campo.getTag() + " deve ser uma nota de 0 a 10.\n";
+                    erros.add(campo.getTag() + " deve ser uma nota de 0 a 10.");
                     camposValidos = false;
                 }
             }
 
         }
+
+
         if(!camposValidos){
-            if(msgCamposNulos.length() > 2) {
+            if(msgCamposNulos.length() > 2 ) {
                 msgCamposNulos = msgCamposNulos.substring(0, msgCamposNulos.length()-2);
                 msgCamposNulos += ".";
+
+                erros.add(msgCamposNulos);
             }
 
 
-            //Todo: Criar uma lista de mensagens e processar em um for onde sera criando um text view para cada erro, ignorando os erros nulos.
-            // Pode se utilizar essa logica para criação das listas também
-            tvErro.setText(msgCamposNulos +
-                    "\n" + msgEmailInvalido +
-                    "\n" + msgIdadeInvalido +
-                    "\n" + msgNotaInvalida)
-            ;
+            //Criando listagem de erros na tela
+            for(String erro : erros){
+                TextView tvErros = new TextView(this);
+                tvErros.setText(erro);
+
+                tvErros.setLayoutParams( new ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                ));
+
+                linearLayoutErros.addView(tvErros);
+
+            }
         }
 
 
+
+
+
         return camposValidos;
+    }
+
+    private void criarNotas(){
+
+        String nome = etNome.getText().toString();
+        String email = etEmail.getText().toString();
+        int idade = Integer.parseInt(etIdade.getText().toString());
+        String disciplina = etDisciplina.getText().toString();
+        double notaPrimBi = Double.parseDouble(etNotaPrimeiroBi.getText().toString());
+        double notaSegBi = Double.parseDouble(etNotaSegundoBi.getText().toString());
+
+        Media media = new Media( nome, email, idade, disciplina, notaPrimBi, notaSegBi);
+        String msgAprovacao;
+        if (media.isAprovado()) msgAprovacao = "Aluno aprovado";
+        else {
+            msgAprovacao = "Aluno reprovado";
+        }
+
+        String msg = "Nome: " + media.getNome() +
+                    "\nEmail: " + media.getEmail() +
+                    "\nIdade: " + media.getIdade() +
+                    "\nDisciplna: "+ media.getDisciplina() +
+                    "\nNotas 1° e 2° Bimestre: "+ media.getNotaPrimBi() + " e " + media.getNotaSegBi() +
+                    "\nMédia: " + media.getMedia() +
+                    "\n" + msgAprovacao +
+                    "\n----------------------------------------------------------";
+
+        TextView tvItemLista = new TextView(this);
+        tvItemLista.setText(msg);
+
+        tvItemLista.setLayoutParams( new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+
+        ));
+
+        linearLayoutListagem.addView(tvItemLista);
     }
 }
