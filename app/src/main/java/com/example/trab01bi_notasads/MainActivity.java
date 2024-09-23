@@ -1,6 +1,7 @@
 package com.example.trab01bi_notasads;
 
 import android.os.Bundle;
+import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -93,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 camposValidos = false;
 
             }else if(campo == etEmail){
-                if (!campo.getText().toString().contains("@")){
+                if (!Patterns.EMAIL_ADDRESS.matcher(etEmail.getText().toString()).matches()){
                     camposValidos = false;
                     erros.add("O e-mail inserido não é um e-mail válido.");
                     campo.setError("O e-mail inserido não é um e-mail válido.");
